@@ -4,6 +4,11 @@ from bs4 import BeautifulSoup
 import pandas as pd
 import io
 
+st.set_page_config(
+    page_title="Table Scraper",
+    page_icon="https://img.icons8.com/?size=100&id=ITIhejPZQD5g&format=png&color=000000"
+)
+
 def scrape_tables(url, table_class):
     response = requests.get(url)
     if response.status_code != 200:
