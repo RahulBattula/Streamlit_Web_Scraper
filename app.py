@@ -2,27 +2,26 @@ import streamlit as st
 import requests
 from bs4 import BeautifulSoup
 import pandas as pd
-import io
 
 st.set_page_config(
     page_title="Table Scraper",
     page_icon="https://img.icons8.com/?size=100&id=ITIhejPZQD5g&format=png&color=000000"
 )
 
-def scrape_tables(url, table_class):
+def scrape_tables(url):
     response = requests.get(url)
     if response.status_code != 200:
         return None, f"Failed to retrieve content. Status code: {response.status_code}"
 
     soup = BeautifulSoup(response.content, 'html.parser')
-    tables = soup.find_all('table', class_=table_class)
+    tables = soup.find_all('table')
     if not tables:
-        return None, "No tables found with the given class name."
+        return None, "No tables found on the page."
 
     dataframes = []
     sections = []
 
-    for table in tables:
+    for idx, table in enumerate(tables):
         rows = table.find_all('tr')
         data = []
         for row in rows:
@@ -31,8 +30,9 @@ def scrape_tables(url, table_class):
             data.append(cols)
         df = pd.DataFrame(data)
         dataframes.append(df)
-        section_title = table.find_previous('h3')
-        sections.append(section_title.get_text(strip=True) if section_title else "Table")
+        # Try to get section heading or use default name if not available
+        section_title = table.find_previous(['h3', 'h2', 'h1'])  # Adjust header tags if needed
+        sections.append(section_title.get_text(strip=True) if section_title else f"Table {idx + 1}")
 
     return sections, dataframes
 
@@ -49,11 +49,10 @@ def main():
     )
 
     url = st.text_input("Enter the website URL")
-    table_class = st.text_input("Enter the table's class name")
 
-    if st.button("Scrape Tables"):
-        if url and table_class:
-            sections, dataframes = scrape_tables(url, table_class)
+    if st.button("Get Tables"):
+        if url:
+            sections, dataframes = scrape_tables(url)
             if sections is None:
                 st.error(dataframes)
             else:
